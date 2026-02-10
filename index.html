@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Certificado Verificado - Viaje Interior</title>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- QRCode -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    body {
+      font-family: "Georgia", serif;
+      background: #fdf6e3;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+    }
+
+    .certificado {
+      border: 2px solid #cfae70;
+      padding: 40px;
+      max-width: 700px;
+      width: 100%;
+      text-align: center;
+      position: relative;
+      background-color: #fff;
+    }
+
+    h1 { color: #cfae70; font-size: 28px; margin-bottom: 10px; }
+    h2 { color: #a6782d; font-size: 24px; margin-bottom: 20px; }
+    p { font-size: 16px; margin-bottom: 15px; }
+
+    #btnDescargar {
+      margin-top: 25px;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #d8bb7a, #b8954d);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .triangulo {
+      font-size: 16px;
+      margin: 10px 0;
+    }
+
+    .qr-container {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="certificado" id="certificado">
+    <h1>Certificado de Análisis Interior</h1>
+    <h2 id="nombrePaciente">Nombre del Paciente</h2>
+    <p id="eneagrama">Eneagrama dominante: </p>
+    <p id="mensaje">No es un juicio. Es un umbral.</p>
+    <div class="triangulo">•<br>• •</div>
+    <button id="btnDescargar">Descargar PDF</button>
+    <div class="qr-container" id="qrContainer"></div>
+  </div>
+
+  <script>
+    // ===== Base de datos simulada de certificados =====
+    const certificadosDB = {
+      "VI-ABC123": { nombre: "Edgar González", eneagrama: "Tipo 5" },
+      "VI-XYZ789": { nombre: "Ana Pérez", eneagrama: "Tipo 2" }
+    };
+
+    // ===== Leer código de la URL =====
+    const urlParams = new URLSearchParams(window.location.search);
+    const codigo = urlParams.get("codigo");
+
+    const certificado = certificadosDB[codigo] || { nombre: "Inválido", eneagrama: "-" };
+
+    // ===== Mostrar datos en la página =====
+    document.getElementById("nombrePaciente").textContent = certificado.nombre;
+    document.getElementById("eneagrama").textContent = "Eneagrama dominante: " + certificado.eneagrama;
+
+    // ===== Generar QR con URL completa =====
+    const qrText = window.location.href; // QR apunta a la misma página
+    new QRCode(document.getElementById("qrContainer"), { text: qrText, width: 80, height: 80 });
+
+    // ===== Función para descargar PDF =====
+    document.getElementById("btnDescargar").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF("p", "mm", "a4");
+      const width = doc.internal.pageSize.getWidth();
+      const height = doc.internal.pageSize.getHeight();
+      const margin = 20;
+
+      // Borde dorado
+      doc.setLineWidth(1.5);
+      doc.setDrawColor(207, 174, 112);
+      doc.rect(margin, margin, width - 2*margin, height - 2*margin);
+
+      // Título
+      doc.setFont("Garamond", "bold");
+      doc.setFontSize(20);
+      doc.setTextColor(160,130,60);
+      doc.text("Certificado de Análisis Interior", width/2, 40, { align:"center" });
+
+      // Nombre
+      doc.setFont("Garamond", "bolditalic");
+      doc.setFontSize(18);
+      doc.setTextColor(140,100,40);
+      doc.text(certificado.nombre, width/2, 80, { align:"center" });
+
+      // Eneagrama
+      doc.setFont("Garamond", "normal");
+      doc.setFontSize(14);
+      doc.text("Eneagrama dominante: " + certificado.eneagrama, width/2, 100, { align:"center" });
+
+      // Mensaje
+      doc.setFont("Garamond", "italic");
+      doc.setFontSize(12);
+      doc.text("No es un juicio. Es un umbral.", width/2, 120, { align:"center" });
+
+      // Triángulo de puntos
+      const triY = 130;
+      const triX = width/2;
+      const triSize = 3;
+      doc.setFont("Garamond","bold");
+      doc.setFontSize(16);
+      doc.text("•", triX, triY);
+      doc.text("•", triX-triSize*2, triY+triSize*2);
+      doc.text("•", triX+triSize*2, triY+triSize*2);
+
+      // QR
+      const qrImg = document.getElementById("qrContainer").querySelector("img");
+      if(qrImg) doc.addImage(qrImg.src, "PNG", width-60, height-60, 50,50);
+
+      // Descargar PDF
+      doc.save(`Certificado_${certificado.nombre}.pdf`);
+    });
+  </script>
+
+</body>
+</html>
